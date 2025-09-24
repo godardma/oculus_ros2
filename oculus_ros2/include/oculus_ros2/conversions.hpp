@@ -40,6 +40,7 @@
 #include <oculus_interfaces/msg/oculus_fire_config.hpp>
 #include <oculus_interfaces/msg/oculus_header.hpp>
 #include <oculus_interfaces/msg/oculus_ping.hpp>
+#include <oculus_interfaces/msg/oculus_ping2.hpp>
 #include <oculus_interfaces/msg/oculus_status.hpp>
 #include <oculus_interfaces/msg/oculus_version_info.hpp>
 #include <oculus_interfaces/msg/ping.hpp>
@@ -159,6 +160,33 @@ inline void toMsg(oculus_interfaces::msg::Ping& msg, const oculus::PingMessage::
 
   msg.bearings.assign(ping->bearing_data(), ping->bearing_data() + ping->bearing_count());
   msg.ping_data = ping->data();
+}
+
+inline void toMsg(oculus_interfaces::msg::OculusPing2& msg, const oculus::PingMessage::ConstPtr& ping) {
+  msg.header.stamp = toMsg(ping->timestamp());
+
+  msg.ping_id = ping->ping_index();
+  msg.status = 0; //TODO
+  msg.frequency = ping->frequency();
+  msg.temperature = ping->temperature();;
+  msg.pressure = ping->pressure();
+  msg.heading = 0;  //TODO
+  msg.pitch = 0;  //TODO
+  msg.roll = 0;  //TODO
+  msg.speeed_of_sound_used = ping->speed_of_sound_used();
+  msg.ping_start_time = ping->ping_firing_date();
+  msg.data_size = ping->sample_size();
+  msg.range_resolution = ping->range_resolution();
+  msg.n_ranges = ping->range_count();
+  msg.n_beams = ping->bearing_count();
+  msg.spare0 = 0; //TODO
+  msg.spare1 = 0; //TODO
+  msg.spare2 = 0; //TODO
+  msg.spare3 = 0; //TODO
+  msg.image_offset = ping->ping_data_offset();
+  msg.image_size = ping->ping_data_size();
+  msg.message_size = 0;  //TODO
+
 }
 
 }  // namespace oculus

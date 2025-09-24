@@ -10,14 +10,19 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/OculusHeader.msg"
-  "msg/OculusVersionInfo.msg"
-  "msg/OculusStatus.msg"
-  "msg/OculusFireConfig.msg"
-  "msg/OculusPing.msg"
-  "msg/OculusStampedPing.msg"
-  "msg/Ping.msg"
-  DEPENDENCIES builtin_interfaces std_msgs
+	"msg/OculusHeader.msg"
+	"msg/OculusVersionInfo.msg"
+	"msg/OculusStatus.msg"
+	"msg/OculusFireConfig.msg"
+	"msg/OculusFireConfig2.msg"
+	"msg/OculusPing.msg"
+	"msg/OculusPing2.msg"
+	"msg/OculusStampedPing.msg"
+	"msg/Ping.msg"
+	"msg/SonarConfig.msg"
+	"srv/GetSonarConfig.srv"
+	"srv/SetSonarConfig.srv"
+	DEPENDENCIES builtin_interfaces std_msgs
 )
 
 # EXPORTS

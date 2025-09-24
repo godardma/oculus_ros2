@@ -1,5 +1,3 @@
-#! /usr/bin/python
-
 # BSD 3-Clause License
 #
 # Copyright (c) 2022, ENSTA-Bretagne
@@ -30,14 +28,36 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from oculus_sonar.cfg import OculusSonarConfig as config
+import os
+
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch_ros.actions import Node
 
 
-def print_parameter(param):
-    print("Parameter : " + param["name"] + " :")
-    for key in param:
-        print(" - " + key + " : " + str(param[key]))
+def generate_launch_description():
 
+    ld = LaunchDescription()
 
-for param in config.config_description["parameters"]:
-    print_parameter(param)
+    config = os.path.join(
+        get_package_share_directory("oculus_ros2"), "cfg", "helios.yaml"
+    )
+
+    oculus_sonar_node = Node(
+        package="oculus_ros2",
+        executable="oculus_sonar_node",
+        name="oculus_sonar",
+        parameters=[config],
+        namespace="sonar",
+        remappings=[
+            ("status", "status"),
+            ("ping", "ping"),
+            ("temperature", "temperature"),
+            ("pressure", "pressure"),
+        ],
+        output="screen",
+    )
+
+    ld.add_action(oculus_sonar_node)
+
+    return ld

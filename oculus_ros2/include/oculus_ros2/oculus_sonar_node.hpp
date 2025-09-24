@@ -46,6 +46,7 @@
 
 #include <oculus_interfaces/msg/oculus_status.hpp>
 #include <oculus_interfaces/msg/ping.hpp>
+#include <oculus_interfaces/msg/oculus_ping2.hpp>
 #include <oculus_ros2/conversions.hpp>
 #include <oculus_ros2/sonar_viewer.hpp>
 #include <rcl_interfaces/msg/parameter_descriptor.hpp>
@@ -64,10 +65,14 @@ struct SonarParameters {
   double sound_speed;
   bool use_salinity;
   double salinity;
+  bool scientific_mode;
+  bool gain_boost;
+  bool transmit_boost;
 };
 
 namespace flagByte {
 const int RANGE_AS_METERS = 0x01;  // bit 0: 0 = interpret range as percent, 1 = interpret range as meters
+const int SIXTEEN_BIT_IMG = 0x02;  // bit 1: 0 = 8 bit image, 1 = 16 bit image
 // const int ?? = 0x02;  // bit 1: ?? const int DATA_DEPTH = 0x02;  // bit 1: 0 = 8 bit data, 1 = 16 bit data  // inverted ?
 // TODO(hugoyvrn)
 const int SEND_GAINS = 0x04;  // bit 2: 0 = won't send gain, 1 = send gain
@@ -77,6 +82,21 @@ const int GAIN_ASSIST = 0x10;  // bit 4: gain assist?
 const int NBEAMS = 0x40;  // bit 6: enable 512 beams
 // const int ?? = 0x80;  // bit 7: ?
 }  // namespace flagByte
+
+// Don't you think this should be an enum?
+namespace extFlagsWord {
+// in OculusSimpleFireMessage2 structure 
+const int GAIN_REDUCE_6DB = 0x00000001;		// Not tested
+const int GAIN_REDUCE_12DB = 0x00000002;	// Not tested
+const int GAIN_BOOST = 0x00000004;			// Not tested
+const int CHIRP_ENABLE = 0x00000008;		// Not tested
+const int TRANSMIT_BOOST = 0x00000010;		// Not tested
+const int ADVANCED_COMPRESSION = 0x00000020;// Not tested
+const int _4BIT_BMG = 0x00000040; // overrides flags16BitBmg in flags field		// Not tested
+const int UDP_DATA_OUTPUT = 0x00000080;		// Not tested
+const int EXTENDED_TEMPERATURE = 0x00000100;// Not tested
+const int SCIENTIFIC_DATA_MODE = 0x00000200;// image pixels are 32 bits when this bit is set
+} // namespace extFlagWord
 
 namespace params {
 
@@ -93,7 +113,11 @@ struct BoolParam {
 const BoolParam GAIN_ASSIT = {"gain_assist", true, ""};
 const BoolParam USE_SALINITY = {"use_salinity", true, "Use salinity to calculate sound_speed."};
 
-const std::vector<BoolParam> BOOL = {GAIN_ASSIT, USE_SALINITY};
+const BoolParam SWITCH_SCIENTIFIC_DATA_MODE = {"switch_scientific_data_mode",false,"image pixels are 32 bits when set"};
+const BoolParam SET_GAIN_BOOST = {"set_gain_boost",false,"might be rx gain boost"};
+const BoolParam SET_TRANSMIT_BOOST = {"set_transmit_boost",false,"boost transmit signal"};
+
+const std::vector<BoolParam> BOOL = {GAIN_ASSIT, USE_SALINITY,SWITCH_SCIENTIFIC_DATA_MODE,SET_GAIN_BOOST,SET_TRANSMIT_BOOST};
 
 struct IntParam {
   const std::string name;
@@ -150,7 +174,11 @@ public:
 protected:
   const std::vector<std::string> dynamic_parameters_names_{params::FREQUENCY_MODE.name, params::PING_RATE.name,
       params::NBEAMS.name, params::GAIN_ASSIT.name, params::RANGE.name, params::GAMMA_CORRECTION.name, params::GAIN_PERCENT.name,
-      params::SOUND_SPEED.name, params::USE_SALINITY.name, params::SALINITY.name, "run"};
+      params::SOUND_SPEED.name, params::USE_SALINITY.name, params::SALINITY.name,
+	  params::SWITCH_SCIENTIFIC_DATA_MODE.name,
+	  params::SET_GAIN_BOOST.name,
+	  params::SET_TRANSMIT_BOOST.name,
+	 "run"};
 
   SonarParameters currentSonarParameters_;
   SonarParameters currentRosParameters_;
@@ -173,6 +201,7 @@ private:
   const double temperature_stop_limit_;
   rclcpp::Publisher<oculus_interfaces::msg::OculusStatus>::SharedPtr status_publisher_{nullptr};
   rclcpp::Publisher<oculus_interfaces::msg::Ping>::SharedPtr ping_publisher_{nullptr};
+  rclcpp::Publisher<oculus_interfaces::msg::OculusPing2>::SharedPtr oculus_ping_publisher_{nullptr};
   rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr temperature_publisher_{nullptr};
   rclcpp::Publisher<sensor_msgs::msg::FluidPressure>::SharedPtr pressure_publisher_{nullptr};
 

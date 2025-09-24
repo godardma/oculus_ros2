@@ -37,8 +37,8 @@
 using SonarDriver = oculus::SonarDriver;
 
 OculusSonarNode::OculusSonarNode()
-  : Node("oculus_sonar"),
-    is_running_(this->declare_parameter<bool>("run", params::RUN_MODE_DEFAULT_VALUE)),
+  : Node("oculus_simple_sonar"),
+    is_running_(this->declare_parameter<bool>("run", true)),
     sonar_viewer_(static_cast<rclcpp::Node*>(this)),
     frame_id_(this->declare_parameter<std::string>("frame_id", "sonar")),
     temperature_warn_limit_(this->declare_parameter<double>("temperature_warn", params::TEMPERATURE_WARN_DEFAULT_VALUE)),
@@ -78,7 +78,7 @@ OculusSonarNode::OculusSonarNode()
   this->currentConfig_.pingRate = pingRateHighest;           // was PingRateType
   this->currentConfig_.networkSpeed = 0xff;       // The max network speed in Mbs , set to 0x00 or 0xff to use link speed 
   this->currentConfig_.gammaCorrection = 0;    // The gamma correction - 255 is equal to a gamma correction of 1.0 
-  this->currentConfig_.flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
+  this->currentConfig_.flags = (1 << 0) | (0 << 1) | (1 << 2) | (1 << 3);
   this->currentConfig_.rangePercent = 10.0;       // The range demand (%) 
   this->currentConfig_.gainPercent = 100.0;        // The percentage gain 
   this->currentConfig_.speedOfSound = 1499.0;       // The speed of sound - set to zero to use internal calculations 
