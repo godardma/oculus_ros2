@@ -84,9 +84,9 @@ class ScientificViewer : public rclcpp::Node
       this->declare_parameter<bool>("apply_tvg", false);
       this->declare_parameter<double>("gain", 3000.);
 
-      bool remove_cag_ = this->get_parameter("remove_cag").as_bool();
-      bool apply_tvg_ = this->get_parameter("apply_tvg").as_bool();
-      double gain_applied_ = this->get_parameter("gain").as_double();
+      this->remove_cag_ = this->get_parameter("remove_cag").as_bool();
+      this->apply_tvg_ = this->get_parameter("apply_tvg").as_bool();
+      this->gain_applied_ = this->get_parameter("gain").as_double();
 
       RCLCPP_INFO(this->get_logger(), "removing CAG: %s", remove_cag_ ? "true" : "false");
       RCLCPP_INFO(this->get_logger(), "applying TVG: %s", apply_tvg_ ? "true" : "false");
@@ -139,17 +139,16 @@ class ScientificViewer : public rclcpp::Node
 
         // 3000. is a chosen gain
         // set gain_i to a constant to keep the CAG
-        float gain_i = gain_applied_;
+        float gain_i = this->gain_applied_;
 
-        if (remove_cag_)
+        if (this->remove_cag_)
           gain_i/=std::sqrt(static_cast<float>(gain));
 
         // Compensation of the energy diffusion depending on the range
         float tvg_factor = 40.0*log(1+r_max*((float) i/(float) height));
 
-        if (apply_tvg_)
-          gain_i *= tvg_factor/90.;
-        
+        if (this->apply_tvg_)
+          gain_i *= tvg_factor/90.;        
 
         for (int j = SIZE_OF_GAIN_; j < step; j++)
         {

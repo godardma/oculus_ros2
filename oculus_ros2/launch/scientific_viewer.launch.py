@@ -39,28 +39,11 @@ def generate_launch_description():
 
     ld = LaunchDescription()
 
-    config = os.path.join(
-        get_package_share_directory("oculus_ros2"), "cfg", "default.yaml"
-    )
 
     viewer_config = os.path.join(
         get_package_share_directory("oculus_ros2"), "cfg", "scientific_viewer.yaml"
     )
 
-    oculus_sonar_node = Node(
-        package="oculus_ros2",
-        executable="oculus_sonar_node",
-        name="oculus_sonar",
-        parameters=[config],
-        namespace="sonar",
-        remappings=[
-            ("status", "status"),
-            ("ping", "ping"),
-            ("temperature", "temperature"),
-            ("pressure", "pressure"),
-        ],
-        output="screen",
-    )
 
     scientific_viewer_node = Node(
         package="oculus_ros2",
@@ -71,7 +54,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    ld.add_action(oculus_sonar_node)
-    # ld.add_action(scientific_viewer_node)
+    ld.add_action(scientific_viewer_node)
 
     return ld
