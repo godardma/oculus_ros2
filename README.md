@@ -1,12 +1,16 @@
 # Oculus sonar ROS2
 
-ROS2 node for the Blueprint Subsea Oculus sonar.
+ROS2 node for the Blueprint Subsea Oculus sonar. This is a lighter version from the one on the master branch.
 
 ## Metapackage description
 
 This is a ROS2 metapackage including:
  * A ROS2 package **oculus_interfaces** containing the useful ROS messages definitions,
  * A ROS2 package **oculus_ros2** interfacing the driver messages with ROS2 topics,
+
+## Warning
+
+This version of the driver may not work for the newer versions of the oculus' firmware.
 
 ## Requirements
 
@@ -32,7 +36,7 @@ cd <your colcon workspace>/src
 
 Clone the metapackage repository:
 ```
-git clone https://github.com/ENSTABretagneRobotics/oculus_ros2.git
+git clone https://github.com/godardma/oculus_ros2.git
 ```
 
 Compile the metapackage:
@@ -120,7 +124,7 @@ export LD_LIBRARY_PATH=<your install location>:$LD_LIBRARY_PATH
 
 Launch ROS2 node with your listening port for sonar data (default 52102):
 ```
-ros2 launch oculus_ros2 helios.launch.py
+ros2 launch oculus_ros2 default.launch.py
 ```
 
 **N.B.** Remap topics to change their name in the launch file.
@@ -139,9 +143,9 @@ subscribers on the /oculus_sonar/ping topic.
 
 ### Sonar parameters configuration
 
-The default values used to configure the sonar parameters are [here](/oculus_ros2/cfg/helios.yaml). They are declared in the code as ROS2 parameters if no custom configuration is used.
+The default values used to configure the sonar parameters are [here](/oculus_ros2/cfg/default.yaml). They are declared in the code as ROS2 parameters if no custom configuration is used.
 
-Copy and paste this YAML file to create your custom sonar configuration, and indicate it in the [launch file](/oculus_ros2/launch/helios.launch.py) or create your own launch file.
+Copy and paste this YAML file to create your custom sonar configuration, and indicate it in the [launch file](/oculus_ros2/launch/default.launch.py) or create your own launch file.
 
 To see all the available parameters use:
 ```

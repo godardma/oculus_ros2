@@ -100,36 +100,16 @@ class ScientificViewer : public rclcpp::Node
       std::vector<uint8_t> datas;
       auto ping_data = msg.ping_data;
 
-      const int mat_encoding = CV_16U;
       const int SIZE_OF_GAIN_ = 4;
 
       int height = msg.n_ranges;
       int width = msg.n_beams;
 
-      // const int step = width + SIZE_OF_GAIN_;
       const int step = 2*width + SIZE_OF_GAIN_;
-      // const int offset = -16;
+
       const int offset = 2048;
 
-      const char* ros_image_encoding = sensor_msgs::image_encodings::MONO16;
-
-      float raw_gain_min = std::numeric_limits<float>::max();
-      float raw_gain_max = std::numeric_limits<float>::min();
-      float max_intensity=0.;
-      for (int i = 0; i < height; i++) {
-        auto byte0 =  *(ping_data.begin() + offset + i * step);
-        auto byte1 =  *(ping_data.begin() + offset + i * step +1);
-        auto byte2 =  *(ping_data.begin() + offset + i * step +2);
-        auto byte3 =  *(ping_data.begin() + offset + i * step +3);
-        uint32_t gain = (static_cast<uint32_t>(byte0)) |
-                  (static_cast<uint32_t>(byte1) << 8) |
-                  (static_cast<uint32_t>(byte2) << 16) |
-                  (static_cast<uint32_t>(byte3) << 24);
-        raw_gain_min = std::min(raw_gain_min, static_cast<float>(gain));
-        raw_gain_max = std::max(raw_gain_max, static_cast<float>(gain));
-      }
-
-      float r_max=20.;
+      float r_max=20.; // TODO : get it from the message instead
 
       for (int i = 0; i < height; ++i)
       {
@@ -141,34 +121,31 @@ class ScientificViewer : public rclcpp::Node
                   (static_cast<uint32_t>(byte1) << 8) |
                   (static_cast<uint32_t>(byte2) << 16) |
                   (static_cast<uint32_t>(byte3) << 24);
+
+        // 3000. is a chosen gain
+        // set gain_i to a constant to keep the CAG
         float gain_i = 3000./std::sqrt(static_cast<float>(gain)); //1200kHz, 2000 for buoy
+
+        // Compensation of the energy diffusion depending on the range
         float tvg_factor = 40.0*log(1+r_max*((float) i/(float) height));
-        // RCLCPP_INFO(this->get_logger(), "tvg_factor: %u %f", i, tvg_factor);
 
         gain_i *= tvg_factor/90.;
         
-        // float gain_i = 10000./std::sqrt(static_cast<float>(gain)); // 2100kHz 
-        // RCLCPP_INFO(this->get_logger(), "Gain: %u %f", i, std::sqrt(gain_i));
+
         for (int j = SIZE_OF_GAIN_; j < step; j++)
         {
           auto data = *(ping_data.begin() + offset + i * step + j);
           float new_data = data;
-          // divide by sqrt of gain
           
           new_data = new_data * gain_i ; // no CAG
-          // new_data *= std::sqrt(raw_gain_max);
 
-          if (i>=150)
-            max_intensity = std::max(max_intensity, new_data);
           if (new_data>255)
             new_data=255.;
           datas.push_back(new_data);  // no CAG
-          // datas.push_back(data); // CAG
         }
       }
-      // RCLCPP_INFO(this->get_logger(), "Max intensity: %f", max_intensity);
       rtheta_image.data = datas;
-      // rtheta_publisher_->publish(rtheta_image);
+      rtheta_publisher_->publish(rtheta_image);
       
       auto compressed_image = compressImageMsg(rtheta_image);
       rtheta_compressed_publisher_->publish(compressed_image);
