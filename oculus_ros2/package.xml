@@ -4,7 +4,7 @@
   <version>0.0.1</version>
   <description>ROS 2 nodes for BluePrint subsea Oculus M1200d sonar</description>
 
-  <maintainer email="auguste@forssea-robotics.fr">Auguste BOURGOIS</maintainer>
+  <maintainer email="mael.godard@ensta-bretagne.org">Maël GODARD</maintainer>
 
   <license>BSD3</license>
 

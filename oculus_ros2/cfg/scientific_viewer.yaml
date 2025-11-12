@@ -1,0 +1,8 @@
+/**:
+  ros__parameters:
+
+    remove_cag: true
+
+    apply_tvg: true
+    
+    gain: 2500.

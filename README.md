@@ -1,6 +1,6 @@
 # Oculus sonar ROS2
 
-ROS2 node for the Blueprint Subsea Oculus sonar. This is a lighter version from the one on the master branch.
+ROS2 node for the Blueprint Subsea Oculus M1200d sonar. This is a lighter version from the one on the master branch.
 
 ## Metapackage description
 

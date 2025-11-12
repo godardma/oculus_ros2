@@ -3,7 +3,7 @@
     <name>oculus_interfaces</name>
     <version>0.0.1</version>
     <description>ROS 2 messages interfaces for BluePrint subsea Oculus M1200d sonar</description>
-    <maintainer email="auguste@forssea-robotics.fr">Auguste BOURGOIS</maintainer>
+    <maintainer email="mael.godard@ensta-bretagne.org">Maël GODARD</maintainer>
     <license>BSD3</license>
 
     <buildtool_depend>ament_cmake</buildtool_depend>

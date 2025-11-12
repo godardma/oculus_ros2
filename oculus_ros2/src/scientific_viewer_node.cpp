@@ -80,11 +80,26 @@ class ScientificViewer : public rclcpp::Node
     ScientificViewer()
     : Node("scientific_viewer")
     {
-      ping_subscriber_ = this->create_subscription<oculus_interfaces::msg::Ping>("sonar/ping", 1, std::bind(&ScientificViewer::ping_callback, this, std::placeholders::_1));
+      this->declare_parameter<bool>("remove_cag", false);
+      this->declare_parameter<bool>("apply_tvg", false);
+      this->declare_parameter<double>("gain", 3000.);
 
-      // rtheta_publisher_ = this->create_publisher<sensor_msgs::msg::Image>("scientific/rtheta_image", 10);
-      rtheta_publisher_ = this->create_publisher<sensor_msgs::msg::Image>("scientific/rtheta_image", 1);
-      rtheta_compressed_publisher_ = this->create_publisher<sensor_msgs::msg::CompressedImage>("scientific/compressed_rtheta_image", 1);
+      bool remove_cag_ = this->get_parameter("remove_cag").as_bool();
+      bool apply_tvg_ = this->get_parameter("apply_tvg").as_bool();
+      double gain_applied_ = this->get_parameter("gain").as_double();
+
+      RCLCPP_INFO(this->get_logger(), "removing CAG: %s", remove_cag_ ? "true" : "false");
+      RCLCPP_INFO(this->get_logger(), "applying TVG: %s", apply_tvg_ ? "true" : "false");
+      RCLCPP_INFO(this->get_logger(), "gain: %.1f", gain_applied_);
+
+      if (apply_tvg_ && !remove_cag_)
+        RCLCPP_INFO(this->get_logger(), "Warning, if the CAG is not removed the application of the TVG is not necessary");
+
+
+      ping_subscriber_ = this->create_subscription<oculus_interfaces::msg::Ping>("ping", 1, std::bind(&ScientificViewer::ping_callback, this, std::placeholders::_1));
+
+      rtheta_publisher_ = this->create_publisher<sensor_msgs::msg::Image>("rtheta_image", 1);
+      rtheta_compressed_publisher_ = this->create_publisher<sensor_msgs::msg::CompressedImage>("compressed_rtheta_image", 1);
 
     }
 
@@ -109,7 +124,7 @@ class ScientificViewer : public rclcpp::Node
 
       const int offset = 2048;
 
-      float r_max=20.; // TODO : get it from the message instead
+      float r_max= msg.range;
 
       for (int i = 0; i < height; ++i)
       {
@@ -124,12 +139,16 @@ class ScientificViewer : public rclcpp::Node
 
         // 3000. is a chosen gain
         // set gain_i to a constant to keep the CAG
-        float gain_i = 3000./std::sqrt(static_cast<float>(gain)); //1200kHz, 2000 for buoy
+        float gain_i = gain_applied_;
+
+        if (remove_cag_)
+          gain_i/=std::sqrt(static_cast<float>(gain));
 
         // Compensation of the energy diffusion depending on the range
         float tvg_factor = 40.0*log(1+r_max*((float) i/(float) height));
 
-        gain_i *= tvg_factor/90.;
+        if (apply_tvg_)
+          gain_i *= tvg_factor/90.;
         
 
         for (int j = SIZE_OF_GAIN_; j < step; j++)
@@ -150,6 +169,10 @@ class ScientificViewer : public rclcpp::Node
       auto compressed_image = compressImageMsg(rtheta_image);
       rtheta_compressed_publisher_->publish(compressed_image);
     }
+
+    bool remove_cag_;
+    bool apply_tvg_;
+    double gain_applied_;
 
     rclcpp::Subscription<oculus_interfaces::msg::Ping>::SharedPtr ping_subscriber_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr rtheta_publisher_;
