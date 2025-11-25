@@ -43,6 +43,14 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+float TL_M1200d(float range, float alpha = 0.3)
+{
+  // the first term stand for the geometrical divergece, and the second term stands for the absorption in the water
+  // theorical transmission loss should be 40log10(range) + 2.0*alpha*range;
+  // here we use 10log10(range) as it was found to fit best. This difference could be explained by the amplification etc done by the sonar prior to the gain application
+  return 10.0*log10(range) + 2.0*alpha*range;
+}
+
 
 sensor_msgs::msg::CompressedImage compressImageMsg(const sensor_msgs::msg::Image & image_msg)
 {
@@ -54,18 +62,15 @@ sensor_msgs::msg::CompressedImage compressImageMsg(const sensor_msgs::msg::Image
         throw std::runtime_error("cv_bridge exception: " + std::string(e.what()));
     }
 
-    // Encode image using OpenCV (e.g., JPEG)
+    // Encode image using OpenCV
     std::vector<uchar> compressed_data;
-    // std::vector<int> compression_params = {cv::IMWRITE_JPEG_QUALITY, 95};
-    // std::vector<int> compression_params = {cv::IMWRITE_JPEG2000_COMPRESSION_X250, 250};
     std::vector<int> compression_params = {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 100};
 
-    std::string format = "jp2";  // You can make this configurable
+    std::string format = "jp2";
     if (!cv::imencode("." + format, cv_ptr->image, compressed_data, compression_params)) {
         throw std::runtime_error("Failed to compress image using OpenCV");
     }
 
-    // Create CompressedImage message
     sensor_msgs::msg::CompressedImage compressed_msg;
     compressed_msg.header = image_msg.header;
     compressed_msg.format = format;
@@ -80,20 +85,20 @@ class ScientificViewer : public rclcpp::Node
     ScientificViewer()
     : Node("scientific_viewer")
     {
-      this->declare_parameter<bool>("remove_cag", false);
+      this->declare_parameter<bool>("remove_agc", false);
       this->declare_parameter<bool>("apply_tvg", false);
       this->declare_parameter<double>("gain", 3000.);
 
-      this->remove_cag_ = this->get_parameter("remove_cag").as_bool();
+      this->remove_agc_ = this->get_parameter("remove_agc").as_bool();
       this->apply_tvg_ = this->get_parameter("apply_tvg").as_bool();
       this->gain_applied_ = this->get_parameter("gain").as_double();
 
-      RCLCPP_INFO(this->get_logger(), "removing CAG: %s", remove_cag_ ? "true" : "false");
+      RCLCPP_INFO(this->get_logger(), "removing AGC: %s", remove_agc_ ? "true" : "false");
       RCLCPP_INFO(this->get_logger(), "applying TVG: %s", apply_tvg_ ? "true" : "false");
       RCLCPP_INFO(this->get_logger(), "gain: %.1f", gain_applied_);
 
-      if (apply_tvg_ && !remove_cag_)
-        RCLCPP_INFO(this->get_logger(), "Warning, if the CAG is not removed the application of the TVG is not necessary");
+      if (apply_tvg_ && !remove_agc_)
+        RCLCPP_INFO(this->get_logger(), "Warning, if the AGC is not removed the application of the TVG is not necessary");
 
 
       ping_subscriber_ = this->create_subscription<oculus_interfaces::msg::Ping>("ping", 1, std::bind(&ScientificViewer::ping_callback, this, std::placeholders::_1));
@@ -112,7 +117,6 @@ class ScientificViewer : public rclcpp::Node
       rtheta_image.width = msg.n_beams;
       rtheta_image.encoding = sensor_msgs::image_encodings::MONO16;
       rtheta_image.step = 2*rtheta_image.width;
-      std::vector<uint8_t> datas;
       auto ping_data = msg.ping_data;
 
       const int SIZE_OF_GAIN_ = 4;
@@ -126,8 +130,15 @@ class ScientificViewer : public rclcpp::Node
 
       float r_max= msg.range;
 
+      std::vector<uint8_t> datas;
+
       for (int i = 0; i < height; ++i)
       {
+        // for each line (= 1 range)
+        std::vector<uint8_t> data_line; // 1 line of data
+        
+        // we first read the gain
+
         uint8_t byte0 =  *(ping_data.begin() + offset + i * step);
         uint8_t byte1 =  *(ping_data.begin() + offset + i * step +1);
         uint8_t byte2 =  *(ping_data.begin() + offset + i * step +2);
@@ -137,31 +148,63 @@ class ScientificViewer : public rclcpp::Node
                   (static_cast<uint32_t>(byte2) << 16) |
                   (static_cast<uint32_t>(byte3) << 24);
 
-        // 3000. is a chosen gain
-        // set gain_i to a constant to keep the CAG
-        float gain_i = this->gain_applied_;
-
-        if (this->remove_cag_)
-          gain_i/=std::sqrt(static_cast<float>(gain));
-
-        // Compensation of the energy diffusion depending on the range
-        float tvg_factor = 40.0*log(1+r_max*((float) i/(float) height));
-
-        if (this->apply_tvg_)
-          gain_i *= tvg_factor/90.;        
-
+        // We read the data of the line
         for (int j = SIZE_OF_GAIN_; j < step; j++)
         {
           auto data = *(ping_data.begin() + offset + i * step + j);
           float new_data = data;
-          
-          new_data = new_data * gain_i ; // no CAG
 
-          if (new_data>255)
-            new_data=255.;
-          datas.push_back(new_data);  // no CAG
+          data_line.push_back(new_data);
         }
+
+        // Base gain
+        float gain_i = this->gain_applied_;
+
+        // Eventually remove the gain applied by the sonar
+        if (this->remove_agc_)
+          gain_i/=std::sqrt(static_cast<float>(gain));
+
+        // Compensation of transmission loss
+
+        float r_min = 0.1; // see documentation of the sonar
+        float r = r_min + ((r_max-r_min)*((float) i/(float) height));
+
+        float alpha = 0.3; // absorption coefficient, 300dB/km at 1 Mhz
+
+        float TL = (r<2.5) ? TL_M1200d(r, alpha) : TL_M1200d(2.5, alpha);
+        float tvg_factor = pow(10.,(TL/10.));
+
+        if (this->apply_tvg_)
+          gain_i *= tvg_factor;  
+
+        // data_line is uint8 array, we first convert it to uint16 array
+        size_t n_pixels = msg.n_beams;
+        std::vector<uint16_t> data_16(n_pixels);
+
+        for (size_t index = 0; index < n_pixels; index++)
+          data_16[index] =
+              static_cast<uint16_t>(data_line[2*index]) |
+              (static_cast<uint16_t>(data_line[2*index + 1]) << 8); // MONO16 = little-endian
+
+        // Apply the gains on the line (!16-bit!)
+        for (size_t index = 0; index < n_pixels; index++)
+          {
+            float new_data = static_cast<float>(data_16[index]) * gain_i;
+            data_16[index] = new_data<65535 ? static_cast<uint16_t>(new_data) : 65535;
+          }
+
+        // convert back to uint8
+
+        std::vector<uint8_t> data_8(2 * n_pixels);
+
+        for (size_t index = 0; index < n_pixels; index++)
+        {
+          data_8[2*index]     = data_16[index] & 0xFF;        // LSB
+          data_8[2*index + 1] = (data_16[index] >> 8) & 0xFF; // MSB
+        }
+        datas.insert(datas.end(), data_8.begin(), data_8.end());
       }
+
       rtheta_image.data = datas;
       rtheta_publisher_->publish(rtheta_image);
       
@@ -169,7 +212,7 @@ class ScientificViewer : public rclcpp::Node
       rtheta_compressed_publisher_->publish(compressed_image);
     }
 
-    bool remove_cag_;
+    bool remove_agc_;
     bool apply_tvg_;
     double gain_applied_;
 
