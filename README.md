@@ -181,6 +181,7 @@ ros2 param set /oculus_sonar gain_assist false
 The sonar might take a lot of time to acknowledge a parameter change (especially
 parameters related to sound velocity and salinity).
 
+**Note that for now the sonar_viewer node is not supported due to changes in the sonar setup**
 
 ## How it works (in brief)
 
