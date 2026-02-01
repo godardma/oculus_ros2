@@ -48,7 +48,6 @@
 #include <oculus_interfaces/msg/ping.hpp>
 #include <oculus_interfaces/msg/oculus_ping2.hpp>
 #include <oculus_ros2/conversions.hpp>
-#include <oculus_ros2/sonar_viewer.hpp>
 #include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/fluid_pressure.hpp>
@@ -195,7 +194,6 @@ private:
   std::shared_ptr<oculus::SonarDriver> sonar_driver_;
   oculus::AsyncService io_service_;
   // rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;
-  SonarViewer sonar_viewer_;
   const std::string frame_id_;
   const double temperature_warn_limit_;
   const double temperature_stop_limit_;

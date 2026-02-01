@@ -40,7 +40,10 @@ ament_target_dependencies(oculus_sonar_node PUBLIC
     cv_bridge
 )
 
-add_executable(scientific_viewer_node src/scientific_viewer_node.cpp)
+add_executable(scientific_viewer_node 
+    src/scientific_viewer_node.cpp
+    src/sonar_viewer.cpp
+)
 
 target_include_directories(scientific_viewer_node PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

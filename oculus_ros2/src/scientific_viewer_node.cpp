@@ -43,6 +43,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <oculus_ros2/sonar_viewer.hpp>
+
 float TL_M1200d(float range, float alpha = 0.3)
 {
   // the first term stand for the geometrical divergece, and the second term stands for the absorption in the water
@@ -83,7 +85,9 @@ class ScientificViewer : public rclcpp::Node
 {
   public:
     ScientificViewer()
-    : Node("scientific_viewer")
+    : Node("scientific_viewer"),
+      sonar_viewer_(static_cast<rclcpp::Node*>(this)),
+      frame_id_(this->declare_parameter<std::string>("frame_id", "sonar_frame"))
     {
       this->declare_parameter<bool>("remove_agc", false);
       this->declare_parameter<bool>("apply_tvg", false);
@@ -111,6 +115,9 @@ class ScientificViewer : public rclcpp::Node
   private:
     void ping_callback(const oculus_interfaces::msg::Ping & msg)
     {
+      oculus_interfaces::msg::Ping ping_8_bit_msg = msg;
+      ping_8_bit_msg.step = msg.n_beams ;
+      ping_8_bit_msg.sample_size = 1; // 8 bit
       auto rtheta_image = sensor_msgs::msg::Image();
       rtheta_image.header = msg.header;
       rtheta_image.height = msg.n_ranges;
@@ -131,6 +138,7 @@ class ScientificViewer : public rclcpp::Node
       float r_max= msg.range;
 
       std::vector<uint8_t> datas;
+      std::vector<uint8_t> datas_8_bit;
 
       for (int i = 0; i < height; ++i)
       {
@@ -191,6 +199,7 @@ class ScientificViewer : public rclcpp::Node
           {
             float new_data = static_cast<float>(data_16[index]) * gain_i;
             data_16[index] = new_data<65535 ? static_cast<uint16_t>(new_data) : 65535;
+            datas_8_bit.push_back(static_cast<uint8_t>(data_16[index]/256)); // for the 8-bit version
           }
 
         // convert back to uint8
@@ -210,6 +219,9 @@ class ScientificViewer : public rclcpp::Node
       
       auto compressed_image = compressImageMsg(rtheta_image);
       rtheta_compressed_publisher_->publish(compressed_image);
+
+      ping_8_bit_msg.ping_data = datas;
+      sonar_viewer_.publishFan(msg.n_beams, msg.n_ranges, 0, datas, msg.bearings, msg.master_mode, msg.header);
     }
 
     bool remove_agc_;
@@ -219,6 +231,9 @@ class ScientificViewer : public rclcpp::Node
     rclcpp::Subscription<oculus_interfaces::msg::Ping>::SharedPtr ping_subscriber_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr rtheta_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr rtheta_compressed_publisher_;
+
+    SonarViewer sonar_viewer_;
+    const std::string frame_id_;
 };
 
 int main(int argc, char * argv[])

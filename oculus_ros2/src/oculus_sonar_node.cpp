@@ -39,7 +39,6 @@ using SonarDriver = oculus::SonarDriver;
 OculusSonarNode::OculusSonarNode()
   : Node("oculus_sonar"),
     is_running_(this->declare_parameter<bool>("run", params::RUN_MODE_DEFAULT_VALUE)),
-    sonar_viewer_(static_cast<rclcpp::Node*>(this)),
     frame_id_(this->declare_parameter<std::string>("frame_id", "sonar")),
     temperature_warn_limit_(this->declare_parameter<double>("temperature_warn", params::TEMPERATURE_WARN_DEFAULT_VALUE)),
     temperature_stop_limit_(this->declare_parameter<double>("temperature_stop", params::TEMPERATURE_STOP_DEFAULT_VALUE)) {
@@ -252,7 +251,7 @@ void OculusSonarNode::updateRosConfig() {
 }
 
 int OculusSonarNode::get_subscription_count() const {
-  return this->ping_publisher_->get_subscription_count() + sonar_viewer_.image_publisher_->get_subscription_count();
+  return this->ping_publisher_->get_subscription_count();
 }
 
 void OculusSonarNode::publishPing(const oculus::PingMessage::ConstPtr& ping) {
@@ -310,10 +309,6 @@ void OculusSonarNode::publishPing(const oculus::PingMessage::ConstPtr& ping) {
   pressure_ros_msg.fluid_pressure = msg.pressure;  // Absolute pressure reading in Pascals.
   pressure_ros_msg.variance = 0;  // 0 is interpreted as variance unknown
   this->pressure_publisher_->publish(pressure_ros_msg);
-
-  // TODO(hugoyvrn, publish bearings)
-
-  sonar_viewer_.publishFan(ping, frame_id_);
 }
 
 void OculusSonarNode::handleDummy() {
