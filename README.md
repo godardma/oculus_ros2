@@ -181,7 +181,45 @@ ros2 param set /oculus_sonar gain_assist false
 The sonar might take a lot of time to acknowledge a parameter change (especially
 parameters related to sound velocity and salinity).
 
-**Note that for now the sonar_viewer node is not supported due to changes in the sonar setup**
+## Using the scientific_viewer node
+
+This node is automaticaly launched by the command:
+```
+ros2 launch oculus_ros2 default.launch.py
+```
+
+It can be launched alone by using:
+```
+ros2 launch oculus_ros2 scientific_viewer.launch.py
+```
+
+This node is responsible for the post processing of the pings. 
+
+The default values used to configure the sonar parameters are [here](/oculus_ros2/cfg/scientific_viewer.yaml). They are declared in the code as ROS2 parameters if no custom configuration is used.
+
+To see all the available parameters use:
+```
+ros2 param list
+```
+You will get
+```
+/sonar/scientific_viewer:
+  apply_tvg
+  frame_id
+  gain
+  qos_overrides./parameter_events.publisher.depth
+  qos_overrides./parameter_events.publisher.durability
+  qos_overrides./parameter_events.publisher.history
+  qos_overrides./parameter_events.publisher.reliability
+  remove_agc
+  use_sim_time
+```
+
+The main parameters are *remove_agc*, *apply_tvg* and *gain*. 
+
+If those are set to *false*, *false* and *1.0*, you will get the default behavior of the sonar. 
+
+If you choose to remove the AGC (Adaptive Gain Control), all the gains are removed from the image. **It is then highly suggested to re apply the TVG by setting *apply_tvg* to *true*.** An additionnal gain should also be applied to "brighten" the image.
 
 ## How it works (in brief)
 
@@ -194,6 +232,8 @@ network by broadcasting its own IP address. The IP address is therefore always
 For other problems, feel free to contact the maintainer at
 pierre.narvor@ensta-bretagne.fr.
 retrievable, regardless of your system network configuration.
+
+**This version of the driver mainly relies on Pierre's work. Yet some modifications have been made to handle 16-bit pings especially. For questions regarding the oculus_ros2 part, feel free to contact mgodard00@outlook.com**
 
 The oculus_sonar library should always detect the IP of a plugged in Oculus
 sonar and will print it to stdout. If you do not have access to stdout, a tool
@@ -209,6 +249,14 @@ the help of the Oculus ViewPoint software (made for Windows, but works with wine
 on Ubuntu).
 
 #### General operation
+
+#### Outputs
+
+In addition to the classical Ping message, multiple outputs are published by the driver:
+
+- The full 16-bit r-theta image (topic rtheta_image)
+- The compressed 16-bit r-theta image (topic compressed_rtheta_image)
+- The fan view (topic image_cartesian)
 
 ## Troubleshooting
 
