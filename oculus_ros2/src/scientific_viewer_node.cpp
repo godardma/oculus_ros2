@@ -45,6 +45,8 @@
 
 #include <oculus_ros2/sonar_viewer.hpp>
 
+#include <rcl_interfaces/msg/parameter_descriptor.hpp>
+
 float TL_M1200d(float range, float alpha = 0.3)
 {
   // the first term stand for the geometrical divergece, and the second term stands for the absorption in the water
@@ -96,6 +98,8 @@ class ScientificViewer : public rclcpp::Node
       this->remove_agc_ = this->get_parameter("remove_agc").as_bool();
       this->apply_tvg_ = this->get_parameter("apply_tvg").as_bool();
       this->gain_applied_ = this->get_parameter("gain").as_double();
+
+      this->param_cb_ = this->add_on_set_parameters_callback(std::bind(&ScientificViewer::setConfigCallback, this, std::placeholders::_1));
 
       RCLCPP_INFO(this->get_logger(), "removing AGC: %s", remove_agc_ ? "true" : "false");
       RCLCPP_INFO(this->get_logger(), "applying TVG: %s", apply_tvg_ ? "true" : "false");
@@ -218,6 +222,32 @@ class ScientificViewer : public rclcpp::Node
       sonar_viewer_.publishFan(msg.n_beams, msg.n_ranges, 0, datas, msg.bearings, msg.master_mode, msg.header);
     }
 
+    rcl_interfaces::msg::SetParametersResult setConfigCallback(const std::vector<rclcpp::Parameter>& parameters) {
+      rcl_interfaces::msg::SetParametersResult result;
+      result.successful = true;
+      result.reason = "";
+
+      for (const rclcpp::Parameter& param : parameters) {
+        if (param.get_name() == "remove_agc") {
+          this->remove_agc_ = param.as_bool();
+          RCLCPP_INFO(this->get_logger(), "removing AGC: %s", remove_agc_ ? "true" : "false");
+        } else if (param.get_name() == "apply_tvg") {
+          this->apply_tvg_ = param.as_bool();
+          RCLCPP_INFO(this->get_logger(), "applying TVG: %s", apply_tvg_ ? "true" : "false");
+        } else if (param.get_name() == "gain") {
+          this->gain_applied_ = param.as_double();
+          RCLCPP_INFO(this->get_logger(), "gain: %.1f", gain_applied_);
+        }
+        else {
+          RCLCPP_INFO(this->get_logger(), "Unknown parameter: %s", param.get_name().c_str());
+          result.successful = false;
+          result.reason = "Unknown parameter: " + param.get_name();
+        }
+      }
+      return result;
+    }
+      
+
     bool remove_agc_;
     bool apply_tvg_;
     double gain_applied_;
@@ -228,6 +258,8 @@ class ScientificViewer : public rclcpp::Node
 
     SonarViewer sonar_viewer_;
     const std::string frame_id_;
+
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_{nullptr};
 };
 
 int main(int argc, char * argv[])
