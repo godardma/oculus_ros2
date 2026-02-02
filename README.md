@@ -221,6 +221,11 @@ If those are set to *false*, *false* and *1.0*, you will get the default behavio
 
 If you choose to remove the AGC (Adaptive Gain Control), all the gains are removed from the image. **It is then highly suggested to re apply the TVG by setting *apply_tvg* to *true*.** An additionnal gain should also be applied to "brighten" the image.
 
+These three parameters can be changed dynamically, for example by using the command line:
+```
+ros2 param set /sonar/scientific_viewer gain 500.0
+```
+
 ## How it works (in brief)
 
 #### Network configuration
