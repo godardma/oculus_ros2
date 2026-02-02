@@ -257,6 +257,7 @@ In addition to the classical Ping message, multiple outputs are published by the
 - The full 16-bit r-theta image (topic rtheta_image)
 - The compressed 16-bit r-theta image (topic compressed_rtheta_image)
 - The fan view (topic image_cartesian)
+- The same fan view in 8-bit for easier real-time visualisation (topic image_cartesian_8_bit)
 
 ## Troubleshooting
 

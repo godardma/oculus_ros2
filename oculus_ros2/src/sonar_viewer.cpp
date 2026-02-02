@@ -42,6 +42,7 @@ std::vector<float> bearings_in_rad(const std::vector<int16_t>& bearings) {
 
 SonarViewer::SonarViewer(rclcpp::Node* node) : node_(node) {
   image_publisher_ = node->create_publisher<sensor_msgs::msg::Image>("image_cartesian", 1);
+  image_8_bit_publisher_ = node->create_publisher<sensor_msgs::msg::Image>("image_cartesian_8_bit", 1);
 }
 
 SonarViewer::~SonarViewer() {}
@@ -121,4 +122,12 @@ void SonarViewer::publishFan(const int& width,
   sensor_msgs::msg::Image msg;
   cv_bridge::CvImage(header, ros_image_encoding, out).toImageMsg(msg);
   image_publisher_->publish(msg);
+
+  sensor_msgs::msg::Image msg_8_bit;
+  cv::Mat out_8u;
+  out.convertTo(out_8u, CV_8UC1, 1.0 / 256.0);
+  cv_bridge::CvImage(header, sensor_msgs::image_encodings::MONO8, out_8u).toImageMsg(msg_8_bit);
+  image_8_bit_publisher_->publish(msg_8_bit);
+
+  
 }

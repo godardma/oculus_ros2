@@ -67,6 +67,7 @@ public:
       const std_msgs::msg::Header& header) const;
 
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_8_bit_publisher_;
 
 protected:
   const double LOW_FREQUENCY_BEARING_APERTURE_ = 65.;
