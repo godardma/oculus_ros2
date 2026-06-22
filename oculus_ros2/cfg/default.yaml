@@ -7,7 +7,7 @@
 
     run: True # If run is False, stanby mode is forced. Default value is False.
 
-    frequency_mode: 1 # Sonar beam frequency mode. Default value is 2.
+    frequency_mode: 2 # Sonar beam frequency mode. Default value is 2.
     # 1: Low frequency (1.2MHz, wide aperture).
     # 2: High frequency (2.1MHz, narrow aperture).
 
@@ -25,7 +25,8 @@
 
     gain_assist: False # Enable gain assist. Default value is True.
 
-    rangePercent: 20.0 # Sonar range (in meters), min=0.3, max=40.0.  Default value is 20.0.
+    # rangePercent: 5.0 # Sonar range (in meters), min=0.3, max=40.0.  Default value is 20.0.
+    range: 10.0
 
     # These parameters are for scaling data (investigate)
     gamma_correction: 1 # Gamma correction, min=0, max=255.  Default value is 153 (60%).

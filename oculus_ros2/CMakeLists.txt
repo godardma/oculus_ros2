@@ -31,6 +31,7 @@ target_include_directories(oculus_sonar_node PUBLIC
 target_link_libraries(oculus_sonar_node PRIVATE
     oculus_driver
 )
+
 ament_target_dependencies(oculus_sonar_node PUBLIC
     rclcpp
     oculus_interfaces
@@ -48,6 +49,10 @@ add_executable(scientific_viewer_node
 target_include_directories(scientific_viewer_node PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(scientific_viewer_node PRIVATE
+    oculus_driver
 )
 
 ament_target_dependencies(scientific_viewer_node PUBLIC
