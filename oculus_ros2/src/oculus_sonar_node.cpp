@@ -78,19 +78,10 @@ OculusSonarNode::OculusSonarNode()
   this->currentConfig_.networkSpeed = 0xff;       // The max network speed in Mbs , set to 0x00 or 0xff to use link speed 
   this->currentConfig_.gammaCorrection = 0;    // The gamma correction - 255 is equal to a gamma correction of 1.0 
   this->currentConfig_.flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3);
-  this->currentConfig_.rangePercent = 10.0;       // The range demand (%) 
+  this->currentConfig_.range = 10.0;       // The range demand (%) 
   this->currentConfig_.gainPercent = 100.0;        // The percentage gain 
   this->currentConfig_.speedOfSound = 1499.0;       // The speed of sound - set to zero to use internal calculations 
   this->currentConfig_.salinity = 0;           // THe salinity to be used with internal speed of sound calculations (ppt) 
-  this->currentConfig_.extFlags = 0;
-  this->currentConfig_.reserved[0] = 0;
-  this->currentConfig_.reserved[1] = 0;
-  this->currentConfig_.reserved[2] = 0;
-  this->currentConfig_.reserved[3] = 0;
-  this->currentConfig_.reserved[4] = 0;
-  this->currentConfig_.reserved[5] = 0;
-  this->currentConfig_.reserved[6] = 0;
-  this->currentConfig_.reserved[7] = 0;
 
   for (const params::BoolParam& param : params::BOOL) {
     if (!this->has_parameter(param.name)) {
@@ -459,23 +450,23 @@ void OculusSonarNode::sendParamToSonar(rclcpp::Parameter param, rcl_interfaces::
   } else if (param.get_name() == params::SWITCH_SCIENTIFIC_DATA_MODE.name) {
     RCLCPP_INFO_STREAM(this->get_logger(), "Setting scientific data mode to " << param.as_bool());
     if (param.as_bool()) {
-      newConfig.extFlags |= extFlagsWord::SCIENTIFIC_DATA_MODE;
+      RCLCPP_WARN(this->get_logger(), "Option non supportee avec oculus_driver (SimpleFire v1)");
 	} else {
-      newConfig.extFlags &= ~extFlagsWord::SCIENTIFIC_DATA_MODE;
+      RCLCPP_WARN(this->get_logger(), "Option non supportee avec oculus_driver (SimpleFire v1)");
 	}
   } else if (param.get_name() == params::SET_GAIN_BOOST.name) {
     RCLCPP_INFO_STREAM(this->get_logger(), "Setting gain boost to " << param.as_bool());
     if (param.as_bool()) {
-      newConfig.extFlags |= extFlagsWord::GAIN_BOOST;
+      RCLCPP_WARN(this->get_logger(), "Option non supportee avec oculus_driver (SimpleFire v1)");
 	} else {
-      newConfig.extFlags &= ~extFlagsWord::GAIN_BOOST;
+      RCLCPP_WARN(this->get_logger(), "Option non supportee avec oculus_driver (SimpleFire v1)");
 	}
   } else if (param.get_name() == params::SET_TRANSMIT_BOOST.name) {
     RCLCPP_INFO_STREAM(this->get_logger(), "Setting transmit boost to " << param.as_bool());
     if (param.as_bool()) {
-      newConfig.extFlags |= extFlagsWord::TRANSMIT_BOOST;
+      RCLCPP_WARN(this->get_logger(), "Option non supportee avec oculus_driver (SimpleFire v1)");
 	} else {
-      newConfig.extFlags &= ~extFlagsWord::TRANSMIT_BOOST;
+      RCLCPP_WARN(this->get_logger(), "Option non supportee avec oculus_driver (SimpleFire v1)");
 	}
   }
 

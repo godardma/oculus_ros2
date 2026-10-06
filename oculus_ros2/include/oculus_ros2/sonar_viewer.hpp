@@ -33,7 +33,7 @@
 #ifndef OCULUS_ROS2__SONAR_VIEWER_HPP_
 #define OCULUS_ROS2__SONAR_VIEWER_HPP_
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <oculus_driver/AsyncService.h>
 #include <oculus_driver/SonarDriver.h>
 
